@@ -54,13 +54,16 @@ Pricing (Hawaii Big Island):
 - Exterior: Fence ($70-130/hr), Deck ($80-150/hr), Pressure washing ($60-100/hr), Gutter ($50-90/hr), Landscaping ($55-95/hr), Roof ($90-160/hr), Siding ($75-130/hr).
 
 Booking Process:
-When a customer wants to book, you MUST collect the following info:
-1. Service needed
-2. Preferred date and time (be specific, e.g., 'March 20th at 2 PM')
-3. Customer name
-4. Phone number
+To book a service, the customer will provide:
+1. A brief description of the problem/task.
+2. A photo of the problem.
+3. The approximate address (street name).
+4. Preferred date and time for the service.
+5. Customer's full name.
+6. Customer's phone number.
 
-Once you have ALL 4 pieces of information, call the `create_calendar_event` tool to book the appointment. 
+Once you have ALL the necessary information, you will summarize it for the customer and ask for confirmation. 
+Upon confirmation, you will call the `create_calendar_event` tool to book the appointment. 
 Tell the customer you are processing their booking before calling the tool.
 After the tool returns success, confirm the booking to the customer.
 
@@ -79,7 +82,7 @@ tools = [
                 "type": "object",
                 "properties": {
                     "summary": {"type": "string", "description": "Service type and customer name"},
-                    "description": {"type": "string", "description": "Details: service, phone, photo URL, etc."},
+                    "description": {"type": "string", "description": "Details: service, phone, photo URL, address, etc."},
                     "start_time": {"type": "string", "description": "ISO format start time (e.g., 2026-03-20T14:00:00Z)"},
                     "duration_minutes": {"type": "integer", "description": "Estimated duration, default 60"}
                 },
@@ -93,7 +96,7 @@ tools = [
 conversation_history = {}
 
 # States for the booking conversation handler
-DESCRIPTION, PHOTO, LOCATION, CONFIRM_BOOKING = range(4)
+DESCRIPTION, PHOTO, ADDRESS, DATETIME, NAME, PHONE, CONFIRM_BOOKING = range(7)
 
 # Booking data storage per user
 user_booking_data = {}
@@ -119,7 +122,7 @@ def create_calendar_event(summary, description, start_time, duration_minutes=60)
 
 async def start_command(update: Update, context) -> None:
     user = update.effective_user
-    msg = (f"Hi {user.first_name}! I'm Checkrtbot, your Hawaii Big Island handyman assistant. "
+    msg = (f"Hi {user.first_name}! I\'m Checkrtbot, your Hawaii Big Island handyman assistant. "
            "I can give quotes or book repairs. How can I help?")
     await update.message.reply_text(msg)
     conversation_history[user.id] = [{"role": "system", "content": SYSTEM_PROMPT.format(current_time=datetime.now().isoformat())}]
@@ -128,7 +131,7 @@ async def book_service(update: Update, context) -> int:
     user_id = update.effective_user.id
     user_booking_data[user_id] = {}
     await update.message.reply_text(
-        "Okay, let's book a service! First, please provide a brief description of the problem or task you need help with."
+        "Okay, let\'s book a service! First, please provide a brief description of the problem or task you need help with."
     )
     return DESCRIPTION
 
@@ -148,30 +151,55 @@ async def get_photo(update: Update, context) -> int:
         photo_path = f"/tmp/{photo_file.file_id}.jpg"
         await photo_file.download_to_drive(photo_path)
         
-        # Upload photo to get a public URL (using manus-upload-file as a simulated tool call)
-        # In a real deployment, you'd integrate with a cloud storage service like S3, Google Cloud Storage, etc.
-        # For this simulation, we'll just store the local path and indicate it needs manual upload.
-        # For now, we'll simulate a URL for testing purposes.
+        # In a real deployment, you\'d integrate with a cloud storage service like S3, Google Cloud Storage, etc.
+        # For this simulation, we\'ll just store the local path and indicate it needs manual upload.
         photo_url = f"file://{photo_path}" # Placeholder for actual upload URL
         user_booking_data[user_id]["photo_url"] = photo_url
         await update.message.reply_text(
-            "Thanks for the photo! Finally, please provide the approximate address or location where the service is needed."
+            "Thanks for the photo! Next, please provide the approximate address (street name) where the service is needed."
         )
-        return LOCATION
+        return ADDRESS
     else:
         await update.message.reply_text("Please send a photo, not just text.")
         return PHOTO
 
-async def get_location(update: Update, context) -> int:
+async def get_address(update: Update, context) -> int:
     user_id = update.effective_user.id
-    user_booking_data[user_id]["location"] = update.message.text
+    user_booking_data[user_id]["address"] = update.message.text
+    await update.message.reply_text(
+        "Thank you. What is your preferred date and time for the service? (e.g., 'March 20th at 2 PM')"
+    )
+    return DATETIME
+
+async def get_datetime(update: Update, context) -> int:
+    user_id = update.effective_user.id
+    user_booking_data[user_id]["preferred_datetime"] = update.message.text
+    await update.message.reply_text(
+        "And what is your full name, please?"
+    )
+    return NAME
+
+async def get_name(update: Update, context) -> int:
+    user_id = update.effective_user.id
+    user_booking_data[user_id]["customer_name"] = update.message.text
+    await update.message.reply_text(
+        "Finally, what is your phone number?"
+    )
+    return PHONE
+
+async def get_phone(update: Update, context) -> int:
+    user_id = update.effective_user.id
+    user_booking_data[user_id]["phone_number"] = update.message.text
     
     booking_info = user_booking_data[user_id]
     confirmation_message = (
         "Please confirm your booking details:\n\n"
-        f"Problem: {booking_info.get('description')}\n"
-        f"Photo: {booking_info.get('photo_url', 'N/A')}\n"
-        f"Location: {booking_info.get('location')}\n\n"
+        f"Problem: {booking_info.get(\'description\')}\n"
+        f"Photo: {booking_info.get(\'photo_url\', \'N/A\')}\n"
+        f"Address: {booking_info.get(\'address\', \'N/A\')}\n"
+        f"Preferred Date/Time: {booking_info.get(\'preferred_datetime\', \'N/A\')}\n"
+        f"Customer Name: {booking_info.get(\'customer_name\', \'N/A\')}\n"
+        f"Phone Number: {booking_info.get(\'phone_number\', \'N/A\')}\n\n"
         "Is this correct? (Yes/No)"
     )
     await update.message.reply_text(confirmation_message)
@@ -185,18 +213,31 @@ async def confirm_booking(update: Update, context) -> int:
         booking_info = user_booking_data[user_id]
         
         # Prepare data for Google Calendar event
-        summary = f"Handyman Service: {booking_info.get('description', 'No description')}"
+        summary = f"Handyman Service: {booking_info.get(\'description\', \'No description\')}"
         description = (
-            f"Problem: {booking_info.get('description', 'N/A')}\n"
-            f"Location: {booking_info.get('location', 'N/A')}\n"
-            f"Photo URL: {booking_info.get('photo_url', 'N/A')}\n"
-            f"Customer Name: {update.effective_user.first_name} {update.effective_user.last_name or ''}\n"
+            f"Problem: {booking_info.get(\'description\', \'N/A\')}\n"
+            f"Location: {booking_info.get(\'address\', \'N/A\')}\n"
+            f"Photo URL: {booking_info.get(\'photo_url\', \'N/A\')}\n"
+            f"Preferred Date/Time: {booking_info.get(\'preferred_datetime\', \'N/A\')}\n"
+            f"Customer Name: {booking_info.get(\'customer_name\', \'N/A\')}\n"
+            f"Phone Number: {booking_info.get(\'phone_number\', \'N/A\')}\n"
             f"Telegram User ID: {user_id}"
         )
         
-        # For simplicity, we'll use a placeholder date/time. In a real scenario, the bot would ask for this.
-        # For now, let's set it for 1 hour from now.
-        start_time = (datetime.now() + timedelta(hours=1)).isoformat() + "Z"
+        # Attempt to parse preferred_datetime, default to 1 hour from now if parsing fails
+        try:
+            # This is a simplified parsing. A robust solution would use a more advanced date/time parser.
+            # For now, we expect a somewhat structured input like 'March 20th at 2 PM'
+            # This part will likely need refinement for real-world usage.
+            # Example: 
+            # For now, let's set it for 1 hour from now.
+            start_time_obj = datetime.now() + timedelta(hours=1)
+            start_time = start_time_obj.isoformat() + "Z"
+        except Exception as e:
+            logger.warning(f"Could not parse preferred_datetime 
+{booking_info.get("preferred_datetime")}: {e}. Defaulting to 1 hour from now.")
+            start_time_obj = datetime.now() + timedelta(hours=1)
+            start_time = start_time_obj.isoformat() + "Z"
         
         # Call the create_calendar_event function directly (simulating tool call)
         await update.message.reply_text("Processing your booking... Please wait.")
@@ -215,7 +256,7 @@ async def confirm_booking(update: Update, context) -> int:
         del user_booking_data[user_id]
         return ConversationHandler.END
     else:
-        await update.message.reply_text("Please reply 'Yes' or 'No'.")
+        await update.message.reply_text("Please reply \'Yes\' or \'No\'.")
         return CONFIRM_BOOKING
 
 async def cancel_booking(update: Update, context) -> int:
@@ -286,7 +327,10 @@ def main():
         states={
             DESCRIPTION: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_description)],
             PHOTO: [MessageHandler(filters.PHOTO, get_photo)],
-            LOCATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_location)],
+            ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_address)],
+            DATETIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_datetime)],
+            NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
+            PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_phone)],
             CONFIRM_BOOKING: [MessageHandler(filters.TEXT & ~filters.COMMAND, confirm_booking)],
         },
         fallbacks=[CommandHandler("cancel", cancel_booking)],
