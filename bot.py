@@ -27,8 +27,18 @@ client = OpenAI()
 # Google Calendar Service Setup
 def get_calendar_service():
     scopes = ["https://www.googleapis.com/auth/calendar"]
-    creds = service_account.Credentials.from_service_account_info(
-        json.loads(GOOGLE_CREDENTIALS_FILE_CONTENT), scopes=scopes)
+    if not GOOGLE_CREDENTIALS_FILE_CONTENT:
+        logger.error("GOOGLE_CREDENTIALS_JSON environment variable is not set.")
+        raise ValueError("Google Calendar credentials not configured.")
+    if not CALENDAR_ID:
+        logger.error("GOOGLE_CALENDAR_ID environment variable is not set.")
+        raise ValueError("Google Calendar ID not configured.")
+    try:
+        creds_info = json.loads(GOOGLE_CREDENTIALS_FILE_CONTENT)
+    except json.JSONDecodeError as e:
+        logger.error(f"Error decoding GOOGLE_CREDENTIALS_JSON: {e}")
+        raise ValueError(f"Invalid Google Calendar credentials JSON: {e}")
+    creds = service_account.Credentials.from_service_account_info(creds_info, scopes=scopes)
     service = build("calendar", "v3", credentials=creds)
     return service
 
@@ -105,7 +115,7 @@ def create_calendar_event(summary, description, start_time, duration_minutes=60)
         return f"Success: Event created. Link: {event.get("htmlLink")}"
     except Exception as e:
         logger.error(f"Calendar Error: {e}")
-        return f"Error: {str(e)}"
+        return f"Error creating calendar event: {str(e)}"
 
 async def start_command(update: Update, context) -> None:
     user = update.effective_user
@@ -195,7 +205,7 @@ async def confirm_booking(update: Update, context) -> int:
         if "Success" in calendar_result:
             await update.message.reply_text(f"Booking confirmed! {calendar_result}")
         else:
-            await update.message.reply_text(f"Failed to create booking: {calendar_result}")
+            await update.message.reply_text(f"I encountered a technical problem with booking: {calendar_result}. Please try again later or contact support.")
         
         # Clear booking data
         del user_booking_data[user_id]
