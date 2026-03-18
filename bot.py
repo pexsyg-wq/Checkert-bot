@@ -115,7 +115,7 @@ def create_calendar_event(summary, description, start_time, duration_minutes=60)
         }
         
         event = service.events().insert(calendarId=CALENDAR_ID, body=event).execute()
-        return f"Success: Event created. Link: {event.get("htmlLink")}"
+        return f"Success: Event created. Link: {event.get('htmlLink')}"
     except Exception as e:
         logger.error(f"Calendar Error: {e}")
         return f"Error creating calendar event: {str(e)}"
