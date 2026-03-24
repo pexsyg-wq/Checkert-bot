@@ -369,7 +369,7 @@ def main():
         entry_points=[CommandHandler("book", book_service)],
         states={
             DESCRIPTION: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_description)],
-            PHOTO: [MessageHandler(filters.PHOTO, get_photo)],
+            PHOTO: [MessageHandler(filters.PHOTO & ~filters.COMMAND, get_photo)], # Added ~filters.COMMAND
             ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_address)],
             DATETIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_datetime)],
             NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
