@@ -115,7 +115,7 @@ def create_calendar_event(summary, description, start_time, duration_minutes=60)
         }
         
         event = service.events().insert(calendarId=CALENDAR_ID, body=event).execute()
-        return f"Success: Event created. Link: {event.get('htmlLink')}"
+        return f"Success: Event created. Link: {event.get("htmlLink")}"
     except Exception as e:
         logger.error(f"Calendar Error: {e}")
         return f"Error creating calendar event: {str(e)}"
@@ -131,8 +131,8 @@ async def book_service(update: Update, context) -> int:
     user_id = update.effective_user.id
     user_booking_data[user_id] = {}
     # Determine language for the prompt
-    lang_code = update.effective_user.language_code if update.effective_user.language_code in ['en', 'ru'] else 'en'
-    if lang_code == 'ru':
+    lang_code = update.effective_user.language_code if update.effective_user.language_code in ["en", "ru"] else "en"
+    if lang_code == "ru":
         await update.message.reply_text("Опишите кратко проблему / Please describe the problem briefly")
     else:
         await update.message.reply_text("Okay, let's book a service! First, please provide a brief description of the problem or task you need help with.")
@@ -141,8 +141,8 @@ async def book_service(update: Update, context) -> int:
 async def get_description(update: Update, context) -> int:
     user_id = update.effective_user.id
     user_booking_data[user_id]["description"] = update.message.text
-    lang_code = update.effective_user.language_code if update.effective_user.language_code in ['en', 'ru'] else 'en'
-    if lang_code == 'ru':
+    lang_code = update.effective_user.language_code if update.effective_user.language_code in ["en", "ru"] else "en"
+    if lang_code == "ru":
         await update.message.reply_text("Отправьте фото проблемы / Please send a photo of the problem")
     else:
         await update.message.reply_text("Got it! Now, please send a photo of the problem. This helps us understand the issue better.")
@@ -150,7 +150,7 @@ async def get_description(update: Update, context) -> int:
 
 async def get_photo(update: Update, context) -> int:
     user_id = update.effective_user.id
-    lang_code = update.effective_user.language_code if update.effective_user.language_code in ['en', 'ru'] else 'en'
+    lang_code = update.effective_user.language_code if update.effective_user.language_code in ["en", "ru"] else "en"
     if update.message.photo:
         # Get the largest photo
         photo_file = await update.message.photo[-1].get_file()
@@ -161,13 +161,13 @@ async def get_photo(update: Update, context) -> int:
         # For this simulation, we'll just store the local path and indicate it needs manual upload.
         photo_url = f"file://{photo_path}" # Placeholder for actual upload URL
         user_booking_data[user_id]["photo_url"] = photo_url
-        if lang_code == 'ru':
+        if lang_code == "ru":
             await update.message.reply_text("Спасибо за фото! Укажите адрес (название улицы) / Thanks for the photo! Please provide the address (street name)")
         else:
             await update.message.reply_text("Thanks for the photo! Next, please provide the approximate address (street name) where the service is needed.")
         return ADDRESS
     else:
-        if lang_code == 'ru':
+        if lang_code == "ru":
             await update.message.reply_text("Пожалуйста, отправьте фото, а не текст. / Please send a photo, not just text.")
         else:
             await update.message.reply_text("Please send a photo, not just text.")
@@ -176,8 +176,8 @@ async def get_photo(update: Update, context) -> int:
 async def get_address(update: Update, context) -> int:
     user_id = update.effective_user.id
     user_booking_data[user_id]["address"] = update.message.text
-    lang_code = update.effective_user.language_code if update.effective_user.language_code in ['en', 'ru'] else 'en'
-    if lang_code == 'ru':
+    lang_code = update.effective_user.language_code if update.effective_user.language_code in ["en", "ru"] else "en"
+    if lang_code == "ru":
         await update.message.reply_text("Спасибо. Укажите предпочитаемую дату и время / Thank you. Please provide preferred date and time")
     else:
         await update.message.reply_text("Thank you. What is your preferred date and time for the service? (e.g., 'March 20th at 2 PM')")
@@ -186,8 +186,8 @@ async def get_address(update: Update, context) -> int:
 async def get_datetime(update: Update, context) -> int:
     user_id = update.effective_user.id
     user_booking_data[user_id]["preferred_datetime"] = update.message.text
-    lang_code = update.effective_user.language_code if update.effective_user.language_code in ['en', 'ru'] else 'en'
-    if lang_code == 'ru':
+    lang_code = update.effective_user.language_code if update.effective_user.language_code in ["en", "ru"] else "en"
+    if lang_code == "ru":
         await update.message.reply_text("И ваше полное имя, пожалуйста? / And what is your full name, please?")
     else:
         await update.message.reply_text("And what is your full name, please?")
@@ -196,8 +196,8 @@ async def get_datetime(update: Update, context) -> int:
 async def get_name(update: Update, context) -> int:
     user_id = update.effective_user.id
     user_booking_data[user_id]["customer_name"] = update.message.text
-    lang_code = update.effective_user.language_code if update.effective_user.language_code in ['en', 'ru'] else 'en'
-    if lang_code == 'ru':
+    lang_code = update.effective_user.language_code if update.effective_user.language_code in ["en", "ru"] else "en"
+    if lang_code == "ru":
         await update.message.reply_text("Наконец, ваш номер телефона? / Finally, what is your phone number?")
     else:
         await update.message.reply_text("Finally, what is your phone number?")
@@ -208,9 +208,9 @@ async def get_phone(update: Update, context) -> int:
     user_booking_data[user_id]["phone_number"] = update.message.text
     
     booking_info = user_booking_data[user_id]
-    lang_code = update.effective_user.language_code if update.effective_user.language_code in ['en', 'ru'] else 'en'
+    lang_code = update.effective_user.language_code if update.effective_user.language_code in ["en", "ru"] else "en"
 
-    if lang_code == 'ru':
+    if lang_code == "ru":
         confirmation_message = (
             "Пожалуйста, подтвердите детали вашего бронирования:\n\n"
             f"Проблема: {booking_info.get('description')}\n"
@@ -238,7 +238,7 @@ async def get_phone(update: Update, context) -> int:
 async def confirm_booking(update: Update, context) -> int:
     user_id = update.effective_user.id
     user_response = update.message.text.lower()
-    lang_code = update.effective_user.language_code if update.effective_user.language_code in ['en', 'ru'] else 'en'
+    lang_code = update.effective_user.language_code if update.effective_user.language_code in ["en", "ru"] else "en"
 
     if user_response == "yes" or user_response == "да":
         booking_info = user_booking_data[user_id]
@@ -268,19 +268,19 @@ async def confirm_booking(update: Update, context) -> int:
             start_time = start_time_obj.isoformat() + "Z"
         
         # Call the create_calendar_event function directly (simulating tool call)
-        if lang_code == 'ru':
+        if lang_code == "ru":
             await update.message.reply_text("Обрабатываю ваше бронирование... Пожалуйста, подождите. / Processing your booking... Please wait.")
         else:
             await update.message.reply_text("Processing your booking... Please wait.")
         calendar_result = create_calendar_event(summary, description, start_time)
         
         if "Success" in calendar_result:
-            if lang_code == 'ru':
+            if lang_code == "ru":
                 await update.message.reply_text(f"Бронирование подтверждено! {calendar_result} / Booking confirmed! {calendar_result}")
             else:
                 await update.message.reply_text(f"Booking confirmed! {calendar_result}")
         else:
-            if lang_code == 'ru':
+            if lang_code == "ru":
                 await update.message.reply_text(f"Произошла техническая проблема с бронированием: {calendar_result}. Пожалуйста, попробуйте позже или свяжитесь со службой поддержки. / I encountered a technical problem with booking: {calendar_result}. Please try again later or contact support.")
             else:
                 await update.message.reply_text(f"I encountered a technical problem with booking: {calendar_result}. Please try again later or contact support.")
@@ -289,14 +289,14 @@ async def confirm_booking(update: Update, context) -> int:
         del user_booking_data[user_id]
         return ConversationHandler.END
     elif user_response == "no" or user_response == "нет":
-        if lang_code == 'ru':
+        if lang_code == "ru":
             await update.message.reply_text("Бронирование отменено. Вы можете начать снова с /book. / Booking cancelled. You can start again with /book.")
         else:
             await update.message.reply_text("Booking cancelled. You can start again with /book.")
         del user_booking_data[user_id]
         return ConversationHandler.END
     else:
-        if lang_code == 'ru':
+        if lang_code == "ru":
             await update.message.reply_text("Пожалуйста, ответьте 'Да' или 'Нет'. / Please reply 'Yes' or 'No'.")
         else:
             await update.message.reply_text("Please reply 'Yes' or 'No'.")
@@ -306,8 +306,8 @@ async def cancel_booking(update: Update, context) -> int:
     user_id = update.effective_user.id
     if user_id in user_booking_data:
         del user_booking_data[user_id]
-    lang_code = update.effective_user.language_code if update.effective_user.language_code in ['en', 'ru'] else 'en'
-    if lang_code == 'ru':
+    lang_code = update.effective_user.language_code if update.effective_user.language_code in ["en", "ru"] else "en"
+    if lang_code == "ru":
         await update.message.reply_text("Процесс бронирования отменен. / Booking process cancelled.")
     else:
         await update.message.reply_text("Booking process cancelled.")
@@ -364,11 +364,7 @@ async def handle_message(update: Update, context) -> None:
 def main():
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
     
-    # General commands and message handler
-    application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    # Conversation handler for booking
+    # Conversation handler for booking - MUST be added before general message handler
     booking_conv_handler = ConversationHandler(
         entry_points=[CommandHandler("book", book_service)],
         states={
@@ -383,6 +379,10 @@ def main():
         fallbacks=[CommandHandler("cancel", cancel_booking)],
     )
     application.add_handler(booking_conv_handler)
+
+    # General commands and message handler - should not interfere with active conversations
+    application.add_handler(CommandHandler("start", start_command))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.PHOTO, handle_message))
 
     application.run_polling()
 
